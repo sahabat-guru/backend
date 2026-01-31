@@ -44,6 +44,7 @@ export enum ProctoringEventType {
 // JWT Payload
 export interface JWTPayload {
 	sub: string; // user id
+	name: string; // user name
 	email: string;
 	role: Role;
 	type: "access" | "refresh";
@@ -172,8 +173,8 @@ export interface TemplateInfo {
 export interface StartSessionRequest {
 	student_id: string;
 	exam_id: string;
-	student_name: string;
-	exam_name: string;
+	student_name?: string;
+	exam_name?: string;
 }
 
 export interface BrowserEventRequest {

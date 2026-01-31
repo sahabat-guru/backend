@@ -59,6 +59,7 @@ export const authService = {
 		// Generate tokens
 		const tokens = generateTokens({
 			sub: newUser.id,
+			name: newUser.name,
 			email: newUser.email,
 			role: newUser.role as Role,
 		});
@@ -102,6 +103,7 @@ export const authService = {
 		// Generate tokens
 		const tokens = generateTokens({
 			sub: user.id,
+			name: user.name,
 			email: user.email,
 			role: user.role as Role,
 		});
@@ -163,6 +165,7 @@ export const authService = {
 		// Generate new tokens
 		const tokens = generateTokens({
 			sub: user.id,
+			name: user.name,
 			email: user.email,
 			role: user.role as Role,
 		});
