@@ -36,6 +36,17 @@ export const materialsController = {
 		const queryParams = c.req.query();
 		const query = listMaterialsQuerySchema.parse(queryParams);
 
+		// If user is a student, only return published materials
+		if (user.role === Role.MURID) {
+			const result = await materialsService.listPublishedMaterials(query);
+			return c.json({
+				success: true,
+				data: result.data,
+				pagination: result.pagination,
+			});
+		}
+
+		// If user is a teacher, return their materials
 		const result = await materialsService.listMaterials(user.sub, query);
 
 		return c.json({

@@ -1,4 +1,4 @@
-import { eq, and, sql, desc } from "drizzle-orm";
+import { eq, and, sql, desc, ne } from "drizzle-orm";
 import { db } from "../../libs/db";
 import { materials } from "../../libs/db/schema";
 import type { Material, NewMaterial } from "../../libs/db/schema";
@@ -76,6 +76,10 @@ export const materialsRepository = {
 			conditions.push(sql`${materials.title} ILIKE ${`%${search}%`}`);
 		}
 
+		if (query.excludeType) {
+			conditions.push(ne(materials.type, query.excludeType));
+		}
+
 		const whereClause = and(...conditions);
 
 		const [data, countResult] = await Promise.all([
@@ -106,7 +110,7 @@ export const materialsRepository = {
 
 	// List published materials (for students)
 	async listPublished(query: ListMaterialsQuery) {
-		const { page, limit, type, search } = query;
+		const { page, limit, type, search, excludeType } = query;
 		const offset = (page - 1) * limit;
 
 		const conditions = [eq(materials.isPublished, true)];
@@ -117,6 +121,10 @@ export const materialsRepository = {
 
 		if (search) {
 			conditions.push(sql`${materials.title} ILIKE ${`%${search}%`}`);
+		}
+
+		if (excludeType) {
+			conditions.push(ne(materials.type, excludeType));
 		}
 
 		const whereClause = and(...conditions);
