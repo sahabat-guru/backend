@@ -1,3 +1,4 @@
+import "dotenv/config";
 import pino from "pino";
 
 // Environment configuration with validation
