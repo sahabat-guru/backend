@@ -14,6 +14,7 @@ import {
 	examStatistics,
 } from "../../libs/db/schema";
 import type { OverrideScoreInput, TriggerScoringInput } from "./scoring.schema";
+import { aesScorerService } from "../../services/aes-scorer.service";
 
 // Simple scoring job queue (in-memory for MVP, use Redis/DB queue in production)
 interface ScoringJob {
@@ -261,29 +262,97 @@ export const scoringService = {
 				for (const answer of participantAnswers) {
 					if (answer.status === "SCORED") continue;
 
-					// Simple auto-scoring for PG (Pilihan Ganda)
 					let aiScore: number | null = null;
+					let feedbackJson: string | null = null;
 
 					if (
 						answer.question.type === "PG" &&
 						answer.question.answerKey
 					) {
-						// Check if answer matches key
+						// Auto-scoring for PG (Multiple Choice)
 						const isCorrect =
 							answer.answerText?.toUpperCase().trim() ===
 							answer.question.answerKey.toUpperCase().trim();
 						aiScore = isCorrect ? 100 : 0;
+						feedbackJson = JSON.stringify({
+							overall: isCorrect
+								? "Jawaban benar"
+								: "Jawaban salah",
+							strengths: [],
+							improvements: [],
+						});
 					} else if (answer.question.type === "ESSAY") {
-						// For essay, set a default score (in production, call AI scoring API)
-						aiScore = 50; // Placeholder - needs manual review
+						// AI scoring for essay questions
+						try {
+							if (
+								answer.answerText &&
+								answer.question.answerKey
+							) {
+								const rubric = answer.question.rubric as Record<
+									string,
+									number
+								> | null;
+								const scoringResult =
+									await aesScorerService.scoreText(
+										answer.answerText,
+										answer.question.answerKey,
+										rubric || undefined,
+										answer.question.question,
+									);
+
+								aiScore = scoringResult.score;
+								feedbackJson = JSON.stringify({
+									overall: scoringResult.feedback.overall,
+									strengths: scoringResult.feedback.strengths,
+									improvements:
+										scoringResult.feedback.improvements,
+									rubric_breakdown:
+										scoringResult.rubric_breakdown,
+									total_points: scoringResult.total_points,
+									max_points: scoringResult.max_points,
+								});
+
+								logger.debug(
+									{ score: aiScore },
+									`AI scored essay for answer: ${answer.id}`,
+								);
+							} else {
+								// Missing answer or key - set default
+								aiScore = 0;
+								feedbackJson = JSON.stringify({
+									overall:
+										"Tidak ada jawaban atau kunci jawaban tidak tersedia",
+									strengths: [],
+									improvements: [],
+								});
+							}
+						} catch (aiError) {
+							logger.error(
+								{ err: aiError },
+								`AI scoring failed for answer: ${answer.id}, using fallback`,
+							);
+							// Fallback - set placeholder score
+							aiScore = 50;
+							feedbackJson = JSON.stringify({
+								overall:
+									"Penilaian AI gagal, perlu review manual",
+								strengths: [],
+								improvements: [],
+							});
+						}
 					}
 
-					// Update answer
-					await examsRepository.updateAnswerScore(
-						answer.id,
-						aiScore,
-						aiScore,
-					);
+					// Update answer with AI score and feedback
+					await db
+						.update(answers)
+						.set({
+							aiScore,
+							finalScore: aiScore,
+							feedback: feedbackJson,
+							status: "SCORED",
+							updatedAt: new Date(),
+						})
+						.where(eq(answers.id, answer.id));
 				}
 
 				// Recalculate total score
