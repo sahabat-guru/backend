@@ -1,4 +1,4 @@
-import { eq, and, sql, gte, lte, desc } from "drizzle-orm";
+import { eq, and, sql, gte, lte, desc, inArray } from "drizzle-orm";
 import { db } from "../../libs/db";
 import {
 	exams,
@@ -194,7 +194,7 @@ export const analyticsService = {
 					count: sql<number>`count(distinct ${examParticipants.studentId})`,
 				})
 				.from(examParticipants)
-				.where(sql`${examParticipants.examId} = ANY(${examIdList})`);
+				.where(inArray(examParticipants.examId, examIdList));
 
 			totalStudents = Number(studentCount?.count || 0);
 
@@ -202,7 +202,7 @@ export const analyticsService = {
 			const [avgScore] = await db
 				.select({ avg: sql<number>`avg(${examStatistics.avgScore})` })
 				.from(examStatistics)
-				.where(sql`${examStatistics.examId} = ANY(${examIdList})`);
+				.where(inArray(examStatistics.examId, examIdList));
 
 			avgOverallScore = avgScore?.avg || 0;
 		}
