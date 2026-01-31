@@ -307,6 +307,38 @@ export const examsRepository = {
 		});
 	},
 
+	// List student exam history with optional status filter
+	async listStudentExamHistory(
+		studentId: string,
+		status?: "ONGOING" | "FINISHED" | "PUBLISHED",
+	) {
+		const participations = await db.query.examParticipants.findMany({
+			where: eq(examParticipants.studentId, studentId),
+			with: {
+				exam: {
+					with: {
+						teacher: {
+							columns: {
+								id: true,
+								name: true,
+							},
+						},
+						statistics: true,
+					},
+				},
+				answers: true,
+			},
+			orderBy: [desc(examParticipants.createdAt)],
+		});
+
+		// Filter by exam status if provided
+		if (status) {
+			return participations.filter((p) => p.exam.status === status);
+		}
+
+		return participations;
+	},
+
 	// === ANSWERS ===
 
 	// Create or update answer

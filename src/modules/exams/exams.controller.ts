@@ -69,6 +69,43 @@ export const examsController = {
 		});
 	},
 
+	// GET /exams/my-exams (student exam history)
+	async getMyExams(c: Context<{ Variables: AppVariables }>) {
+		const user = c.get("user");
+		const status = c.req.query("status") as
+			| "ONGOING"
+			| "FINISHED"
+			| "PUBLISHED"
+			| undefined;
+
+		const participations = await examsService.getStudentExamHistory(
+			user.sub,
+			status,
+		);
+
+		// Transform data for frontend
+		const exams = participations.map((p) => ({
+			id: p.exam.id,
+			title: p.exam.title,
+			description: p.exam.description,
+			status: p.exam.status,
+			startTime: p.exam.startTime,
+			endTime: p.exam.endTime,
+			duration: p.exam.duration,
+			createdAt: p.exam.createdAt,
+			teacher: p.exam.teacher,
+			participantStatus: p.status,
+			participantScore: p.score,
+			submitTime: p.submitTime,
+			answersCount: p.answers?.length || 0,
+		}));
+
+		return c.json({
+			success: true,
+			data: exams,
+		});
+	},
+
 	// PUT /exams/:id
 	async updateExam(c: Context<{ Variables: AppVariables }>) {
 		const user = c.get("user");
@@ -295,18 +332,6 @@ export const examsController = {
 		return c.json({
 			success: true,
 			data: status,
-		});
-	},
-
-	// GET /exams/my-exams
-	async getMyExams(c: Context<{ Variables: AppVariables }>) {
-		const user = c.get("user");
-
-		const exams = await examsService.getStudentExams(user.sub);
-
-		return c.json({
-			success: true,
-			data: exams,
 		});
 	},
 

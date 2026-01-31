@@ -56,8 +56,25 @@ export const examsService = {
 			throw new ForbiddenError("You do not have access to this exam");
 		}
 
-		// Students can only see ongoing exams
-		if (!isTeacher && exam.status !== "ONGOING") {
+		// Students access rules
+		if (!isTeacher) {
+			// ONGOING exams are always accessible for students
+			if (exam.status === "ONGOING") {
+				return exam;
+			}
+
+			// For FINISHED/PUBLISHED, check if student has participated
+			if (exam.status === "FINISHED" || exam.status === "PUBLISHED") {
+				const participant = await examsRepository.findParticipant(
+					examId,
+					userId,
+				);
+				if (participant) {
+					return exam;
+				}
+			}
+
+			// Otherwise, deny access
 			throw new ForbiddenError("This exam is not available");
 		}
 
@@ -72,6 +89,14 @@ export const examsService = {
 	// List available exams for students
 	async listAvailableExams(query: ListExamsQuery) {
 		return examsRepository.listAvailableExams(query);
+	},
+
+	// Get student exam history
+	async getStudentExamHistory(
+		studentId: string,
+		status?: "ONGOING" | "FINISHED" | "PUBLISHED",
+	) {
+		return examsRepository.listStudentExamHistory(studentId, status);
 	},
 
 	// Update exam
@@ -599,11 +624,18 @@ export const examsService = {
 			participant.id,
 		);
 
+		// Get exam to check if it's published (for showing full results)
+		const exam = await examsRepository.findExamById(examId);
+		const showResults =
+			exam?.status === "PUBLISHED" || exam?.status === "FINISHED";
+
 		return {
 			joined: true,
 			participant,
 			answeredCount: answers.length,
 			submitted: !!participant.submitTime,
+			// Include full answers with questions for results page
+			answers: showResults ? answers : undefined,
 		};
 	},
 
