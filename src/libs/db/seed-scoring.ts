@@ -235,17 +235,21 @@ Butuh sinar matahari dan air. Hasilnya makanan untuk tumbuhan.`,
 Juga bisa mengurangi stres.`,
 			},
 		],
-		// Student 3 - Poor answers
+		// Student 3 - Image-based answers (using OCR)
 		[
 			{ questionIndex: 0, answerText: "A" }, // PG - Wrong
 			{ questionIndex: 1, answerText: "C" }, // PG - Correct
 			{
 				questionIndex: 2,
-				answerText: `Fotosintesis terjadi di daun tumbuhan.`,
+				// Image-based answer - will be processed with OCR
+				answerFileUrl:
+					"https://storage.googleapis.com/sahabatguru-storage-prod/contoh%20ocr.jpg",
 			},
 			{
 				questionIndex: 3,
-				answerText: `Olahraga bagus untuk sehat.`,
+				// Image-based answer - will be processed with OCR
+				answerFileUrl:
+					"https://storage.googleapis.com/sahabatguru-storage-prod/contoh%20ocr.jpg",
 			},
 		],
 	];
@@ -261,7 +265,11 @@ Juga bisa mengurangi stres.`,
 					id: uuidv4(),
 					participantId,
 					questionId: questionData[ans.questionIndex].id,
-					answerText: ans.answerText,
+					answerText:
+						(ans as { answerText?: string }).answerText || null,
+					answerFileUrl:
+						(ans as { answerFileUrl?: string }).answerFileUrl ||
+						null,
 					status: "PENDING", // Ready for scoring
 				})
 				.onConflictDoNothing();
