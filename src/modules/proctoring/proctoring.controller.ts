@@ -4,10 +4,56 @@ import {
 	reportEventSchema,
 	browserEventSchema,
 	listLogsQuerySchema,
+	startSessionSchema,
 } from "./proctoring.schema";
 import type { AppVariables } from "../../types";
 
 export const proctoringController = {
+	// POST /proctoring/sessions/start
+	async startSession(c: Context<{ Variables: AppVariables }>) {
+		const user = c.get("user");
+		const body = await c.req.json();
+		const input = startSessionSchema.parse(body);
+
+		const result = await proctoringService.startProctoringSession({
+			studentId: user.sub,
+			studentName: user.name,
+			examId: input.examId,
+			examName: input.examName,
+		});
+
+		return c.json(
+			{
+				success: true,
+				data: result,
+				message: "Proctoring session started",
+			},
+			201,
+		);
+	},
+
+	// POST /proctoring/sessions/:sessionId/end
+	async endSession(c: Context<{ Variables: AppVariables }>) {
+		const sessionId = c.req.param("sessionId");
+
+		await proctoringService.endProctoringSession(sessionId);
+
+		return c.json({
+			success: true,
+			message: "Proctoring session ended",
+		});
+	},
+
+	// GET /proctoring/sessions/active
+	async getActiveSessions(c: Context<{ Variables: AppVariables }>) {
+		const sessions = await proctoringService.getActiveSessions();
+
+		return c.json({
+			success: true,
+			data: sessions,
+		});
+	},
+
 	// POST /proctoring/events
 	async reportEvent(c: Context<{ Variables: AppVariables }>) {
 		const body = await c.req.json();
@@ -113,3 +159,4 @@ export const proctoringController = {
 		});
 	},
 };
+

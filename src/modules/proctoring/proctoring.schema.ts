@@ -45,3 +45,12 @@ export const listLogsQuerySchema = z.object({
 });
 
 export type ListLogsQuery = z.infer<typeof listLogsQuerySchema>;
+
+// Start session schema
+export const startSessionSchema = z.object({
+	examId: z.string().min(1),
+	examName: z.string().min(1).optional(),
+});
+
+export type StartSessionInput = z.infer<typeof startSessionSchema>;
+
