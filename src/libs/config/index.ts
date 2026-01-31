@@ -38,6 +38,9 @@ export const config = {
 		cheatingDetectionUrl:
 			process.env.CHEATING_DETECTION_URL ||
 			"https://cheating-detection-865275048150.asia-southeast2.run.app",
+		aesScorerUrl:
+			process.env.AES_SCORER_URL ||
+			"https://sahabat-guru-ai-865275048150.asia-southeast2.run.app",
 	},
 
 	// Rate Limiting
