@@ -25,6 +25,7 @@ export const examStatusEnum = pgEnum("exam_status", [
 	"DRAFT",
 	"ONGOING",
 	"FINISHED",
+	"PUBLISHED",
 ]);
 export const answerStatusEnum = pgEnum("answer_status", ["PENDING", "SCORED"]);
 export const proctoringEventTypeEnum = pgEnum("proctoring_event_type", [

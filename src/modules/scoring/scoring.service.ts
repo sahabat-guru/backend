@@ -105,12 +105,29 @@ export const scoringService = {
 			throw new NotFoundError("Participant");
 		}
 
+		// Get exam questions with order
+		const examQuestionsOrdered =
+			await examsRepository.getExamQuestions(examId);
+		const questionOrderMap = new Map(
+			examQuestionsOrdered.map((eq, index) => [
+				eq.questionId,
+				eq.order ?? index,
+			]),
+		);
+
 		const participantAnswers =
 			await examsRepository.getParticipantAnswers(participantId);
 
+		// Sort answers by question order
+		const sortedAnswers = participantAnswers.sort((a, b) => {
+			const orderA = questionOrderMap.get(a.questionId) ?? 999;
+			const orderB = questionOrderMap.get(b.questionId) ?? 999;
+			return orderA - orderB;
+		});
+
 		return {
 			participant,
-			answers: participantAnswers,
+			answers: sortedAnswers,
 		};
 	},
 
