@@ -196,4 +196,61 @@ export const proctoringService = {
 			return [];
 		}
 	},
+
+	// Start proctoring session with external service
+	async startProctoringSession(input: {
+		studentId: string;
+		studentName: string;
+		examId: string;
+		examName?: string;
+	}) {
+		try {
+			const sessionId = await proctoringAIService.startSession({
+				student_id: input.studentId,
+				exam_id: input.examId,
+				student_name: input.studentName,
+				exam_name: input.examName,
+			});
+
+			logger.info(
+				{
+					studentId: input.studentId,
+					examId: input.examId,
+					sessionId,
+				},
+				"Proctoring session started",
+			);
+
+			return {
+				sessionId,
+				websocketUrl: `wss://cheating-detection-865275048150.asia-southeast2.run.app/ws/exam/${sessionId}`,
+			};
+		} catch (error) {
+			logger.error({ err: error }, "Failed to start proctoring session");
+			throw error;
+		}
+	},
+
+	// End proctoring session with external service
+	async endProctoringSession(sessionId: string) {
+		try {
+			await proctoringAIService.endSession(sessionId);
+
+			logger.info({ sessionId }, "Proctoring session ended");
+		} catch (error) {
+			logger.error({ err: error }, "Failed to end proctoring session");
+			throw error;
+		}
+	},
+
+	// Get active sessions from external service
+	async getActiveSessions() {
+		try {
+			const sessions = await proctoringAIService.listActiveSessions();
+			return sessions;
+		} catch (error) {
+			logger.error({ err: error }, "Failed to get active sessions");
+			return [];
+		}
+	},
 };

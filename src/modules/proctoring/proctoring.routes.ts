@@ -9,6 +9,23 @@ const proctoringRoutes = new Hono<{ Variables: AppVariables }>();
 // All routes require authentication
 proctoringRoutes.use("*", authMiddleware);
 
+// Session management (for proctoring)
+proctoringRoutes.post(
+	"/sessions/start",
+	muridOnly,
+	proctoringController.startSession,
+);
+proctoringRoutes.post(
+	"/sessions/:sessionId/end",
+	muridOnly,
+	proctoringController.endSession,
+);
+proctoringRoutes.get(
+	"/sessions/active",
+	guruOnly,
+	proctoringController.getActiveSessions,
+);
+
 // Event reporting (from student client)
 proctoringRoutes.post("/events", muridOnly, proctoringController.reportEvent);
 proctoringRoutes.post(
@@ -45,3 +62,4 @@ proctoringRoutes.get(
 );
 
 export { proctoringRoutes };
+
