@@ -79,9 +79,9 @@ export interface AppVariables {
 export interface PPTGenerateRequest {
 	template: string;
 	topic: string;
-	kurikulum: "kurikulum_merdeka" | "kurikulum_2013";
-	jenjang: string;
-	detail_level: "ringkas" | "lengkap";
+	kurikulum: "kurikulum_merdeka" | "kurikulum_2013" | "cambridge" | "international_baccalaureate";
+	jenjang?: string;
+	detail_level: "ringkas" | "sedang" | "lengkap";
 	include_examples: boolean;
 }
 
@@ -97,8 +97,8 @@ export interface PPTGenerateResponse {
 
 export interface RPPGenerateRequest {
 	topic: string;
-	kurikulum: "kurikulum_merdeka" | "kurikulum_2013";
-	jenjang: string;
+	kurikulum: "kurikulum_merdeka" | "kurikulum_2013" | "cambridge" | "international_baccalaureate";
+	jenjang?: string;
 	tujuan_pembelajaran: string[];
 	karakteristik_siswa: string;
 	alokasi_waktu: string;
@@ -114,11 +114,11 @@ export interface RPPGenerateResponse {
 
 export interface LKPDGenerateRequest {
 	topik_lkpd: string;
-	kurikulum: "kurikulum_merdeka" | "kurikulum_2013";
-	jenjang: string;
+	kurikulum: "kurikulum_merdeka" | "kurikulum_2013" | "cambridge" | "international_baccalaureate";
+	jenjang?: string;
+	kelas: string; // Required by external API, set to same value as jenjang
 	mata_pelajaran: string;
-	kelas: string;
-	jenis_lkpd: "proyek" | "eksperimen" | "diskusi" | "latihan";
+	jenis_lkpd: "latihan" | "praktikum" | "proyek" | "cheat_sheet";
 	fitur_tambahan?: Record<string, unknown>;
 }
 
@@ -133,7 +133,7 @@ export interface LKPDGenerateResponse {
 
 export interface QuestionsGenerateRequest {
 	topic: string;
-	jenjang: string;
+	jenjang?: string;
 	jumlah_soal: number;
 	tipe_soal: ("pilihan_ganda" | "esai")[];
 	tingkat_kesulitan: ("mudah" | "sedang" | "sulit")[];

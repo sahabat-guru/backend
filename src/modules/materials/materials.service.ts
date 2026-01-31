@@ -82,8 +82,8 @@ export const materialsService = {
 					topik_lkpd: lkpdInput.topik_lkpd,
 					kurikulum: lkpdInput.kurikulum,
 					jenjang: lkpdInput.jenjang,
+					kelas: lkpdInput.jenjang || "", // Required by external API, set to same value as jenjang
 					mata_pelajaran: lkpdInput.mata_pelajaran,
-					kelas: lkpdInput.kelas,
 					jenis_lkpd: lkpdInput.jenis_lkpd,
 					fitur_tambahan: lkpdInput.fitur_tambahan,
 				});
@@ -97,7 +97,6 @@ export const materialsService = {
 					kurikulum: lkpdInput.kurikulum,
 					jenjang: lkpdInput.jenjang,
 					mata_pelajaran: lkpdInput.mata_pelajaran,
-					kelas: lkpdInput.kelas,
 					jenis_lkpd: lkpdInput.jenis_lkpd,
 				};
 				break;

@@ -105,12 +105,29 @@ export const scoringService = {
 			throw new NotFoundError("Participant");
 		}
 
+		// Get exam questions with order
+		const examQuestionsOrdered =
+			await examsRepository.getExamQuestions(examId);
+		const questionOrderMap = new Map(
+			examQuestionsOrdered.map((eq, index) => [
+				eq.questionId,
+				eq.order ?? index,
+			]),
+		);
+
 		const participantAnswers =
 			await examsRepository.getParticipantAnswers(participantId);
 
+		// Sort answers by question order
+		const sortedAnswers = participantAnswers.sort((a, b) => {
+			const orderA = questionOrderMap.get(a.questionId) ?? 999;
+			const orderB = questionOrderMap.get(b.questionId) ?? 999;
+			return orderA - orderB;
+		});
+
 		return {
 			participant,
-			answers: participantAnswers,
+			answers: sortedAnswers,
 		};
 	},
 
@@ -284,14 +301,68 @@ export const scoringService = {
 					} else if (answer.question.type === "ESSAY") {
 						// AI scoring for essay questions
 						try {
+							const rubric = answer.question.rubric as Record<
+								string,
+								number
+							> | null;
+
+							// Check if answer has image/file URL (image-based answer)
 							if (
+								answer.answerFileUrl &&
+								answer.question.answerKey
+							) {
+								// Score from image using OCR
+								const imageResult =
+									await aesScorerService.scoreImage(
+										answer.answerFileUrl,
+										answer.question.answerKey,
+										rubric || undefined,
+										answer.question.question,
+									);
+
+								if (imageResult.scoring_result) {
+									aiScore = imageResult.scoring_result.score;
+									feedbackJson = JSON.stringify({
+										overall:
+											imageResult.scoring_result.feedback
+												.overall,
+										strengths:
+											imageResult.scoring_result.feedback
+												.strengths,
+										improvements:
+											imageResult.scoring_result.feedback
+												.improvements,
+										rubric_breakdown:
+											imageResult.scoring_result
+												.rubric_breakdown,
+										total_points:
+											imageResult.scoring_result
+												.total_points,
+										max_points:
+											imageResult.scoring_result
+												.max_points,
+										extracted_text:
+											imageResult.extracted_text,
+									});
+								} else {
+									aiScore = 0;
+									feedbackJson = JSON.stringify({
+										overall:
+											"OCR gagal mengekstrak teks dari gambar",
+										strengths: [],
+										improvements: [],
+									});
+								}
+
+								logger.debug(
+									{ score: aiScore, hasOCR: true },
+									`AI scored image essay for answer: ${answer.id}`,
+								);
+							} else if (
 								answer.answerText &&
 								answer.question.answerKey
 							) {
-								const rubric = answer.question.rubric as Record<
-									string,
-									number
-								> | null;
+								// Score from text
 								const scoringResult =
 									await aesScorerService.scoreText(
 										answer.answerText,
