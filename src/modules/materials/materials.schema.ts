@@ -84,6 +84,7 @@ export const listMaterialsQuerySchema = z.object({
 	type: z.nativeEnum(MaterialType).optional(),
 	isPublished: z.coerce.boolean().optional(),
 	search: z.string().optional(),
+	excludeType: z.nativeEnum(MaterialType).optional(),
 });
 
 export type ListMaterialsQuery = z.infer<typeof listMaterialsQuerySchema>;

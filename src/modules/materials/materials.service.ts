@@ -175,6 +175,11 @@ export const materialsService = {
 		return materialsRepository.listByTeacher(teacherId, query);
 	},
 
+	// List published materials for students
+	async listPublishedMaterials(query: ListMaterialsQuery) {
+		return materialsRepository.listPublished(query);
+	},
+
 	// Update material
 	async updateMaterial(
 		materialId: string,
