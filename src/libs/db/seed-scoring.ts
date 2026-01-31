@@ -147,9 +147,9 @@ dan menjadi dasar rantai makanan.`,
 			title: "Ujian Harian - Test Scoring AI",
 			description:
 				"Ujian untuk testing fitur penilaian otomatis dengan AI",
-			status: "ONGOING",
-			startTime: new Date(),
-			endTime: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours from now
+			status: "FINISHED",
+			startTime: new Date(Date.now() - 24 * 60 * 60 * 1000), // Started 24 hours ago
+			endTime: new Date(Date.now() - 1 * 60 * 60 * 1000), // Ended 1 hour ago
 			duration: 60,
 			settings: {
 				enableProctoring: false,
