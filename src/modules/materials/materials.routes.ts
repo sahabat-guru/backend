@@ -23,4 +23,10 @@ materialsRoutes.delete("/:id", materialsController.deleteMaterial);
 materialsRoutes.post("/:id/publish", materialsController.publishMaterial);
 materialsRoutes.post("/:id/unpublish", materialsController.unpublishMaterial);
 
+// Create exam from QUESTIONS material
+materialsRoutes.post(
+	"/:id/create-exam",
+	materialsController.createExamFromMaterial,
+);
+
 export { materialsRoutes };

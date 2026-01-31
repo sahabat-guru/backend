@@ -259,4 +259,127 @@ export const materialsService = {
 	async getTemplates() {
 		return materialGeneratorService.getTemplates();
 	},
+
+	// Create exam from QUESTIONS material
+	async createExamFromMaterial(materialId: string, teacherId: string) {
+		const material = await materialsRepository.findByIdAndTeacher(
+			materialId,
+			teacherId,
+		);
+
+		if (!material) {
+			throw new NotFoundError("Material");
+		}
+
+		if (material.type !== "QUESTIONS") {
+			throw new ForbiddenError(
+				"Only QUESTIONS materials can be converted to exams",
+			);
+		}
+
+		const contentJson = material.contentJson as {
+			questions?: GeneratedQuestion[];
+			jumlah_soal?: number;
+		};
+
+		if (!contentJson?.questions?.length) {
+			throw new ForbiddenError("Material has no questions");
+		}
+
+		// Import examsRepository
+		const { examsRepository } = await import("../exams/exams.repository");
+
+		// Create questions in questions table
+		const questionIds: string[] = [];
+		for (const q of contentJson.questions) {
+			// Handle field mapping from AI generator (which uses Indonesian keys)
+			// User provided example uses: pertanyaan, tipe, opsi, kunci_jawaban, rubrik_penilaian, tingkat_kesulitan
+			const questionText = q.pertanyaan || q.soal || q.question || "";
+
+			// Map type: "pilihan_ganda" -> "PG", "esai" -> "ESSAY"
+			let questionType = "ESSAY";
+			const rawType = (q.tipe || q.type || "").toLowerCase();
+			if (
+				rawType.includes("pilihan") ||
+				rawType.includes("ganda") ||
+				rawType === "pg"
+			) {
+				questionType = "PG";
+			} else if (rawType.includes("esai") || rawType === "essay") {
+				questionType = "ESSAY";
+			}
+
+			const options = q.opsi || q.pilihan || q.options || null;
+			const answerKey = q.kunci_jawaban || q.answer_key || null;
+			const difficulty = q.tingkat_kesulitan || q.difficulty || "sedang";
+			const category =
+				q.kategori_bloom || q.kategori || q.category || null;
+			const rubric = q.rubrik_penilaian || q.rubrik || q.rubric || null;
+
+			const question = await examsRepository.createQuestion({
+				teacherId,
+				type: questionType as "PG" | "ESSAY",
+				question: questionText,
+				options: options,
+				answerKey: answerKey,
+				rubric: rubric,
+				difficulty: difficulty,
+				category: category,
+				isHots: q.is_hots || false,
+			});
+			questionIds.push(question.id);
+		}
+
+		// Create exam with DRAFT status
+		const exam = await examsRepository.createExam({
+			teacherId,
+			title: material.title,
+			description: `Dibuat dari: ${material.title}`,
+			status: "DRAFT",
+			startTime: null,
+			endTime: null,
+			duration: null,
+			settings: {},
+		});
+
+		// Link questions to exam
+		await examsRepository.addQuestionsToExam(
+			exam.id,
+			questionIds.map((qId, index) => ({
+				questionId: qId,
+				order: index,
+				points: 1,
+			})),
+		);
+
+		logger.info(
+			{ materialId, examId: exam.id, questionCount: questionIds.length },
+			"Exam created from material",
+		);
+
+		return exam;
+	},
 };
+
+// Type for generated question from AI
+interface GeneratedQuestion {
+	soal?: string;
+	question?: string;
+	pertanyaan?: string;
+	tipe?: string;
+	type?: string;
+	pilihan?: Record<string, string>;
+	options?: Record<string, string>;
+	opsi?: Record<string, string>;
+	kunci_jawaban?: string;
+	answer_key?: string;
+	rubrik?: unknown;
+	rubric?: unknown;
+	rubrik_penilaian?: unknown;
+	tingkat_kesulitan?: string;
+	difficulty?: string;
+	kategori?: string;
+	category?: string;
+	kategori_bloom?: string;
+	is_hots?: boolean;
+}

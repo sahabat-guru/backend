@@ -98,6 +98,40 @@ export const examsController = {
 		});
 	},
 
+	// PATCH /exams/:id/status
+	async updateExamStatus(c: Context<{ Variables: AppVariables }>) {
+		const user = c.get("user");
+		const examId = c.req.param("id");
+		const body = await c.req.json();
+
+		const { status } = body as {
+			status: "DRAFT" | "ONGOING" | "FINISHED" | "PUBLISHED";
+		};
+
+		if (!["DRAFT", "ONGOING", "FINISHED", "PUBLISHED"].includes(status)) {
+			return c.json(
+				{
+					success: false,
+					message:
+						"Invalid status. Must be DRAFT, ONGOING, FINISHED, or PUBLISHED",
+				},
+				400,
+			);
+		}
+
+		const exam = await examsService.updateExamStatus(
+			examId,
+			user.sub,
+			status,
+		);
+
+		return c.json({
+			success: true,
+			data: exam,
+			message: `Exam status updated to ${status}`,
+		});
+	},
+
 	// POST /exams/:id/questions
 	async addQuestions(c: Context<{ Variables: AppVariables }>) {
 		const user = c.get("user");

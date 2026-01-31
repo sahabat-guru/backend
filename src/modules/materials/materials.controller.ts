@@ -139,4 +139,24 @@ export const materialsController = {
 			message: "Material deleted successfully",
 		});
 	},
+
+	// POST /materials/:id/create-exam
+	async createExamFromMaterial(c: Context<{ Variables: AppVariables }>) {
+		const user = c.get("user");
+		const materialId = c.req.param("id");
+
+		const exam = await materialsService.createExamFromMaterial(
+			materialId,
+			user.sub,
+		);
+
+		return c.json(
+			{
+				success: true,
+				data: exam,
+				message: "Exam created from material successfully",
+			},
+			201,
+		);
+	},
 };

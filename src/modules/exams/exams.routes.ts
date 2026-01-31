@@ -31,6 +31,9 @@ examsRoutes.put("/:id", guruOnly, examsController.updateExam);
 // Delete exam (GURU only)
 examsRoutes.delete("/:id", guruOnly, examsController.deleteExam);
 
+// Update exam status (GURU only)
+examsRoutes.patch("/:id/status", guruOnly, examsController.updateExamStatus);
+
 // Manage questions in exam (GURU only)
 examsRoutes.post("/:id/questions", guruOnly, examsController.addQuestions);
 examsRoutes.delete(

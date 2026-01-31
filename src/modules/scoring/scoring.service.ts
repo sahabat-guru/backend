@@ -287,9 +287,26 @@ export const scoringService = {
 						answer.question.answerKey
 					) {
 						// Auto-scoring for PG (Multiple Choice)
-						const isCorrect =
-							answer.answerText?.toUpperCase().trim() ===
-							answer.question.answerKey.toUpperCase().trim();
+						const studentAnswer =
+							answer.answerText?.toLowerCase().trim() || "";
+						const key = answer.question.answerKey
+							.toLowerCase()
+							.trim();
+
+						const isCorrect = studentAnswer === key;
+
+						logger.debug(
+							{
+								answerId: answer.id,
+								studentAnswer,
+								key,
+								match: isCorrect,
+								originalAnswer: answer.answerText,
+								originalKey: answer.question.answerKey,
+							},
+							"PG Scoring comparison",
+						);
+
 						aiScore = isCorrect ? 100 : 0;
 						feedbackJson = JSON.stringify({
 							overall: isCorrect

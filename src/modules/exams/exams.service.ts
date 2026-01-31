@@ -89,9 +89,16 @@ export const examsService = {
 			throw new NotFoundError("Exam");
 		}
 
-		if (exam.status !== "DRAFT") {
+		// Allow editing in DRAFT and FINISHED status
+		if (exam.status === "ONGOING") {
 			throw new BadRequestError(
-				"Cannot update exam that is not in DRAFT status",
+				"Cannot update exam that is currently ongoing",
+			);
+		}
+
+		if (exam.status === "PUBLISHED") {
+			throw new BadRequestError(
+				"Cannot update exam that has been published",
 			);
 		}
 
@@ -128,6 +135,80 @@ export const examsService = {
 		logger.info(`Exam deleted: ${examId}`);
 
 		return { success: true };
+	},
+
+	// Update exam status with validation
+	async updateExamStatus(
+		examId: string,
+		teacherId: string,
+		newStatus: "DRAFT" | "ONGOING" | "FINISHED" | "PUBLISHED",
+	) {
+		const exam = await examsRepository.findExamByIdAndTeacher(
+			examId,
+			teacherId,
+		);
+
+		if (!exam) {
+			throw new NotFoundError("Exam");
+		}
+
+		// Validate status transitions
+		const validTransitions: Record<string, string[]> = {
+			DRAFT: ["ONGOING"],
+			ONGOING: ["FINISHED"],
+			FINISHED: ["PUBLISHED", "ONGOING"], // Can reopen or publish
+			PUBLISHED: [], // Terminal state
+		};
+
+		if (!validTransitions[exam.status]?.includes(newStatus)) {
+			throw new BadRequestError(
+				`Cannot transition from ${exam.status} to ${newStatus}`,
+			);
+		}
+
+		// For DRAFT -> ONGOING, check if exam has questions
+		if (exam.status === "DRAFT" && newStatus === "ONGOING") {
+			const questions = await examsRepository.getExamQuestions(examId);
+			if (questions.length === 0) {
+				throw new BadRequestError(
+					"Cannot start exam without questions",
+				);
+			}
+
+			// Initialize statistics
+			await examsRepository.upsertStatistics(examId, {
+				avgScore: 0,
+				maxScore: 0,
+				minScore: 0,
+				totalParticipants: 0,
+				submittedCount: 0,
+				scoredCount: 0,
+				suspiciousCount: 0,
+			});
+
+			// Broadcast to connected clients
+			broadcastExamStart(examId);
+		}
+
+		// For ONGOING -> FINISHED, broadcast end
+		if (exam.status === "ONGOING" && newStatus === "FINISHED") {
+			broadcastExamEnd(examId);
+		}
+
+		const updated = await examsRepository.updateExam(examId, {
+			status: newStatus,
+			...(newStatus === "ONGOING" && !exam.startTime
+				? { startTime: new Date() }
+				: {}),
+			...(newStatus === "FINISHED" ? { endTime: new Date() } : {}),
+		});
+
+		logger.info(
+			{ examId, from: exam.status, to: newStatus },
+			"Exam status updated",
+		);
+
+		return updated;
 	},
 
 	// Add questions to exam
