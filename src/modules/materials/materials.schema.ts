@@ -4,9 +4,9 @@ import { MaterialType } from "../../types";
 // Base generate material schema
 const baseGenerateSchema = z.object({
 	kurikulum: z
-		.enum(["kurikulum_merdeka", "kurikulum_2013"])
+		.enum(["kurikulum_merdeka", "kurikulum_2013", "cambridge", "international_baccalaureate"])
 		.default("kurikulum_merdeka"),
-	jenjang: z.string().min(1, "Jenjang is required"),
+	jenjang: z.string().optional(),
 });
 
 // Generate PPT schema
@@ -14,7 +14,7 @@ export const generatePPTSchema = baseGenerateSchema.extend({
 	type: z.literal("PPT"),
 	template: z.string().default("minimalis"),
 	topic: z.string().min(1, "Topic is required"),
-	detail_level: z.enum(["ringkas", "lengkap"]).default("lengkap"),
+	detail_level: z.enum(["ringkas", "sedang", "lengkap"]).default("lengkap"),
 	include_examples: z.boolean().default(true),
 });
 
@@ -38,9 +38,8 @@ export const generateLKPDSchema = baseGenerateSchema.extend({
 	type: z.literal("LKPD"),
 	topik_lkpd: z.string().min(1, "Topic is required"),
 	mata_pelajaran: z.string().min(1, "Subject is required"),
-	kelas: z.string().min(1, "Class is required"),
 	jenis_lkpd: z
-		.enum(["proyek", "eksperimen", "diskusi", "latihan"])
+		.enum(["latihan", "praktikum", "proyek", "cheat_sheet"])
 		.default("latihan"),
 	fitur_tambahan: z.record(z.unknown()).optional(),
 });
@@ -51,7 +50,7 @@ export type GenerateLKPDInput = z.infer<typeof generateLKPDSchema>;
 export const generateQuestionsSchema = z.object({
 	type: z.literal("QUESTIONS"),
 	topic: z.string().min(1, "Topic is required"),
-	jenjang: z.string().min(1, "Jenjang is required"),
+	jenjang: z.string().optional(),
 	jumlah_soal: z.number().int().positive().max(50).default(10),
 	tipe_soal: z.array(z.enum(["pilihan_ganda", "esai"])).min(1),
 	tingkat_kesulitan: z.array(z.enum(["mudah", "sedang", "sulit"])).min(1),

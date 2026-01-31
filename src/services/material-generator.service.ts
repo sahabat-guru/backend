@@ -141,6 +141,9 @@ export const materialGeneratorService = {
 			"Generating Questions",
 		);
 
+		// Debug: Log the full request body
+		logger.info({ requestBody: data }, "Questions API request body");
+
 		const response = await fetchAPI<QuestionsGenerateResponse>(
 			"/api/generate/questions",
 			{
